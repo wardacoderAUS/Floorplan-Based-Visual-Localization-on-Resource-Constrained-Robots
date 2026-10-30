@@ -1,0 +1,166 @@
+diff --git a/eval_filtering.py b/eval_filtering.py
+index b034696..0e9ea49 100644
+--- a/eval_filtering.py
++++ b/eval_filtering.py
+@@ -1,4 +1,5 @@
+ import argparse
++import csv
+ import os
+ import time
+ 
+@@ -6,7 +7,11 @@ import matplotlib.pyplot as plt
+ import torch
+ import tqdm
+ import yaml
+-from attrdict import AttrDict
++# [E1] attrdict 2.0.1 fails to import on Python >= 3.10 (collections.Mapping removed).
++# The scripts only read split.test, so a two-line shim is equivalent.
++class AttrDict(dict):
++    __getattr__ = dict.__getitem__
++
+ from torch.utils.data import DataLoader
+ 
+ from modules.comp.comp_d_net_pl import *
+@@ -48,6 +53,10 @@ def evaluate_filtering():
+     parser.add_argument(
+         "--traj_len", type=int, default=100, help="length of the trajectory"
+     )
++    # [E1] per-trajectory and per-step output; does not change the algorithm
++    parser.add_argument(
++        "--out_prefix", type=str, default=None, help="[E1] prefix for CSV outputs"
++    )
+     args = parser.parse_args()
+ 
+     # get device
+@@ -190,6 +199,8 @@ def evaluate_filtering():
+     iteration_time = 0
+     feature_extraction_time = 0
+     n_iter = 0
++    traj_rows = []  # [E1]
++    step_rows = []  # [E1] per-step timings, so we can report p50/p99/max not a mean
+ 
+     # loop the over scenes
+     for data_idx in tqdm.tqdm(range(len(test_set))):
+@@ -422,6 +433,15 @@ def evaluate_filtering():
+             )
+ 
+             end_iter = time.time()
++            step_rows.append(  # [E1]
++                dict(
++                    data_idx=data_idx,
++                    t=t,
++                    feature_s=feature_extraction_end - feature_extraction_start,
++                    matching_s=matching_end - matching_start,
++                    iteration_s=end_iter - start_iter,
++                )
++            )
+             matching_time += matching_end - matching_start
+             feature_extraction_time += feature_extraction_end - feature_extraction_start
+             iteration_time += end_iter - start_iter
+@@ -441,6 +461,14 @@ def evaluate_filtering():
+                 .mean()
+             ) ** 0.5 * 0.01
+             RMSEs.append(RMSE)
++            traj_rows.append(  # [E1]
++                dict(
++                    data_idx=data_idx,
++                    scene=scene,
++                    rmse_m=float(RMSE),
++                    max_last10_err_m=float(last_errors.max()),
++                )
++            )
+             print("last_errors", last_errors)
+             if all(last_errors < 1):
+                 success_10.append(True)
+@@ -477,6 +505,18 @@ def evaluate_filtering():
+         print("mean RMSE succeeded : ", RMSEs[success_10].mean())
+         print("mean RMSE all : ", RMSEs.mean())
+ 
++    # [E1] guard against silently dropped trajectories, then dump CSVs
++    print("trajectories evaluated = ", len(RMSEs), " / dataset length = ", len(test_set))
++    assert len(RMSEs) == len(test_set), "trajectories were dropped"
++    if args.out_prefix is not None:
++        os.makedirs(os.path.dirname(os.path.abspath(args.out_prefix)), exist_ok=True)
++        for suffix, rows in (("traj", traj_rows), ("steps", step_rows)):
++            with open(f"{args.out_prefix}_{suffix}.csv", "w", newline="") as f:
++                f.write(f"# net_type={net_type} traj_len={traj_l} device={device}\n")
++                w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
++                w.writeheader()
++                w.writerows(rows)
++
+     if log_timing:
+         feature_extraction_time = feature_extraction_time / n_iter
+         matching_time = matching_time / n_iter
+diff --git a/eval_observation.py b/eval_observation.py
+index 58cf79e..336ea12 100644
+--- a/eval_observation.py
++++ b/eval_observation.py
+@@ -1,10 +1,15 @@
+ import argparse
++import csv
+ import os
+ 
+ import torch
+ import tqdm
+ import yaml
+-from attrdict import AttrDict
++# [E1] attrdict 2.0.1 fails to import on Python >= 3.10 (collections.Mapping removed).
++# The scripts only read split.test, so a two-line shim is equivalent.
++class AttrDict(dict):
++    __getattr__ = dict.__getitem__
++
+ 
+ from modules.comp.comp_d_net_pl import *
+ from modules.mono.depth_net_pl import *
+@@ -43,6 +48,10 @@ def evaluate_observation():
+     parser.add_argument(
+         "--ckpt_path", type=str, default="./logs", help="path of the checkpoints"
+     )
++    # [E1] per-frame output; does not change the algorithm
++    parser.add_argument(
++        "--out_csv", type=str, default=None, help="[E1] write one row per frame"
++    )
+     args = parser.parse_args()
+ 
+     # get device
+@@ -168,6 +177,7 @@ def evaluate_observation():
+     # record the accuracy
+     acc_record = []
+     acc_orn_record = []
++    rows = []  # [E1]
+     for data_idx in tqdm.tqdm(range(len(test_set))):
+         data = test_set[data_idx]
+         # get the scene name according to the data_idx
+@@ -258,6 +268,32 @@ def evaluate_observation():
+         acc_orn = (pose_pred[2] - gt_pose_desdf[2]) % (2 * np.pi)
+         acc_orn = min(acc_orn, 2 * np.pi - acc_orn) / np.pi * 180
+         acc_orn_record.append(acc_orn)
++        rows.append(  # [E1]
++            dict(
++                data_idx=data_idx,
++                scene=scene,
++                idx_within_scene=int(idx_within_scene),
++                pred_x=float(pose_pred[0]),
++                pred_y=float(pose_pred[1]),
++                pred_yaw=float(pose_pred[2]),
++                gt_x=float(gt_pose_desdf[0]),
++                gt_y=float(gt_pose_desdf[1]),
++                gt_yaw=float(gt_pose_desdf[2]),
++                err_m=float(acc),
++                err_deg=float(acc_orn),
++            )
++        )
++
++    # [E1] guard against silently dropped frames
++    print("frames evaluated = ", len(acc_record), " / dataset length = ", len(test_set))
++    assert len(acc_record) == len(test_set), "frames were dropped"
++    if args.out_csv is not None:
++        os.makedirs(os.path.dirname(os.path.abspath(args.out_csv)), exist_ok=True)
++        with open(args.out_csv, "w", newline="") as f:
++            f.write(f"# net_type={net_type} dataset={args.dataset} device={device}\n")
++            w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
++            w.writeheader()
++            w.writerows(rows)
+ 
+     acc_record = np.array(acc_record)
+     acc_orn_record = np.array(acc_orn_record)
