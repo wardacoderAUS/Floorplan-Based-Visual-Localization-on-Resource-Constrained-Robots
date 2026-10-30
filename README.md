@@ -1,5 +1,5 @@
 # Floorplan-Based Visual Localization on Resource-Constrained Robots
-Advisor: Dr. Mohamed Hassan
+
 A visual localization pipeline that finds a camera's position by matching its images against a building floorplan, characterized and deployed on four embedded platforms: ESP32-P4, GAP9, Raspberry Pi 5 and Jetson Orin Nano.
 
 Master’s thesis research supervised by Dr. Mohamed Hassan. Each student’s experiments and milestones are organized in their own folder.
