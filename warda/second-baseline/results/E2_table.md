@@ -9,7 +9,7 @@ python: 3.13.16
 torch: 2.11.0+cu130 (cuda 13.0)
 torchvision: 0.26.0+cu130  lightning: 2.5.6  numpy: 2.1.3  scipy: 1.16.3  opencv: 5.0.0
 xformers: not installed (Depth Anything uses plain PyTorch attention)
-gpu: Tesla T4
+gpu: colab's T4 or A100
 ckpt unloc_gibson_vitl.ckpt: sha256 48883fbdbe2a3f1f0b4f513038ba3cc75f780656d4186fa55604906323d4aac4
 ckpt depth_anything_v2_metric_hypersim_vitl.pth: sha256 6f82ff2bc543ac02ddff4aa31fa363676a8305dd3ccf04e80e2af115a044cb6d
 zip gibson_t: 16429264687 bytes, 51609 files
