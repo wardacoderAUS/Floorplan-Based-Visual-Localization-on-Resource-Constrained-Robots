@@ -1,0 +1,131 @@
+diff --git a/evaluate.py b/evaluate.py
+index 41b8981..89934c5 100644
+--- a/evaluate.py
++++ b/evaluate.py
+@@ -54,6 +54,13 @@ from utils.geometry import (
+ )
+ from utils.postprocessing import postprocess_trajectory
+ 
++import csv  # [E2] per-trajectory and per-step CSVs
++
++# [E2] torch.cuda.synchronize() raises without a GPU; make it a no-op on CPU
++# so the script can be smoke-tested off-GPU. No effect when CUDA is present.
++if not torch.cuda.is_available():
++    torch.cuda.synchronize = lambda *a, **k: None
++
+ # ---------------------------------------------------------------------------
+ # Reproducibility
+ # ---------------------------------------------------------------------------
+@@ -217,6 +224,21 @@ def load_depth_network(args, device):
+         net = UnLocDepthModule.load_from_checkpoint(
+             checkpoint_path=args.checkpoint_path, strict=False,
+         )
++
++    # [E2] strict=False hides missing weights. Check that every trained
++    # (non-backbone) weight of the model is in the checkpoint, and report the
++    # rest, so a silent partial load cannot pass as a result.
++    ckpt_keys = set(torch.load(args.checkpoint_path, map_location="cpu",
++                               weights_only=False)["state_dict"].keys())
++    model_keys = set(net.state_dict().keys())
++    backbone = lambda k: k.startswith("encoder.depth_feature.da.")
++    missing_head = sorted(k for k in model_keys - ckpt_keys if not backbone(k))
++    print(f"[E2] checkpoint keys: {len(ckpt_keys)}, model keys: {len(model_keys)}, "
++          f"backbone keys from checkpoint: {sum(backbone(k) for k in ckpt_keys)}, "
++          f"backbone keys from Depth Anything .pth: "
++          f"{sum(backbone(k) for k in model_keys - ckpt_keys)}, "
++          f"unexpected: {len(ckpt_keys - model_keys)}")
++    assert not missing_head, f"[E2] trained weights missing from checkpoint: {missing_head[:5]}"
+     return net.to(device)
+ 
+ 
+@@ -527,6 +549,12 @@ def main():
+     # Motion model parameters for this dataset (paper settings, fixed).
+     motion = MOTION_SIGMAS[args.dataset]
+ 
++    # [E2] Per-step timings and per-trajectory rows, kept in memory and
++    # written once after the loop (never inside the timed window).
++    step_rows = []
++    traj_rows = []
++    frames_evaluated = 0
++
+     # ------------------------------------------------------------------
+     # Loop over test trajectories
+     # ------------------------------------------------------------------
+@@ -663,6 +691,12 @@ def main():
+             matching_time += t_match_end - t_match_start
+             iteration_time += t_iter_end - t_iter_start
+             n_iter += 1
++            # [E2] same timestamps, kept per step instead of only summed
++            step_rows.append((data_idx, t,
++                              (t_feat_end - t_feat_start) * 1e3,
++                              (t_match_end - t_match_start) * 1e3,
++                              (t_iter_end - t_iter_start) * 1e3))
++            frames_evaluated += 1
+ 
+             # --- Per-frame metrics ---
+             gt_depths_frame = np.array(data["gt_depth"])[t, :]
+@@ -737,7 +771,8 @@ def main():
+                 lr_xy=POSTPROC_LR_XY,
+                 lr_theta=POSTPROC_LR_THETA,
+             )
+-            post_processing_time += time.time() - pp_start
++            pp_dur = time.time() - pp_start  # [E2] kept per trajectory
++            post_processing_time += pp_dur
+             n_post_processing += 1
+ 
+             refined_poses_map = refined_poses.cpu().numpy().copy()
+@@ -762,6 +797,24 @@ def main():
+             )
+             refined_rmse_per_seq.append(refined_rmse)
+ 
++        # [E2] one row per trajectory (forward filter and post-processed)
++        i1 = SUCCESS_THRESHOLDS_M.index(1.0)
++        traj_rows.append(dict(
++            traj=data_idx, scene=scene, idx_in_scene=int(idx_within_scene),
++            frames=len(pred_poses_map),
++            fwd_success_1m=int(success_flags_per_seq[-1][i1]),
++            fwd_rmse_m=float(rmse_per_seq[-1]),
++            pp_success_1m=(int(refined_success_flags_per_seq[-1][i1])
++                           if args.postprocess else ""),
++            pp_rmse_m=(float(refined_rmse_per_seq[-1]) if args.postprocess else ""),
++            pp_ms=(pp_dur * 1e3 if args.postprocess else ""),
++            depth_mae_m=depth_mae_per_seq[-1],
++            depth_cos_sim=depth_cos_sim_per_seq[-1],
++            **{f"recall_{k}": float(v) for k, v in zip(
++                ["0.1m", "0.5m", "1m", "1m30deg", "2m", "5m", "10m"],
++                recalls_per_seq[-1])},
++        ))
++
+     # ------------------------------------------------------------------
+     # Convert accumulators to arrays
+     # ------------------------------------------------------------------
+@@ -822,6 +875,29 @@ def main():
+         if n_post_processing > 0:
+             print(f"    Avg post-processing time      : {post_processing_time / n_post_processing:.4f} s")
+ 
++    # ------------------------------------------------------------------
++    # [E2] Nothing dropped: every trajectory and every frame was evaluated
++    # ------------------------------------------------------------------
++    assert len(traj_rows) == N, f"[E2] trajectories evaluated {len(traj_rows)} != dataset {N}"
++    assert frames_evaluated == N * traj_l, \
++        f"[E2] frames evaluated {frames_evaluated} != {N} x {traj_l}"
++    if args.postprocess:
++        assert len(refined_rmse_per_seq) == N, "[E2] post-processing skipped a trajectory"
++    print(f"[E2] evaluated {len(traj_rows)}/{N} trajectories, "
++          f"{frames_evaluated}/{N * traj_l} frames")
++
++    # [E2] CSVs: one row per trajectory, one row per filter step
++    tag = f"T{traj_l}"
++    with open(os.path.join(output_dir, f"unloc_{tag}_traj.csv"), "w", newline="") as f:
++        w = csv.DictWriter(f, fieldnames=list(traj_rows[0].keys()) if traj_rows else ["traj"])
++        w.writeheader()
++        w.writerows(traj_rows)
++    with open(os.path.join(output_dir, f"unloc_{tag}_steps.csv"), "w", newline="") as f:
++        w = csv.writer(f)
++        w.writerow(["traj", "t", "feature_ms", "matching_ms", "iteration_ms"])
++        w.writerows(step_rows)
++    print(f"[E2] wrote unloc_{tag}_traj.csv and unloc_{tag}_steps.csv to {output_dir}")
++
+     # ------------------------------------------------------------------
+     # Save results
+     # ------------------------------------------------------------------
