@@ -4,7 +4,7 @@ UnLoc (Wüest et al., ICLR 2026), run from the authors' code with their released
 
 ## Result: reproduced
 
-All 10 success rates of the paper's Table 1 match exactly (SR@1m %, Colab Tesla T4):
+All 10 success rates of the paper's Table 1 match exactly (SR@1m %, Colab):
 
 | Walk length (frames) | 100 | 50 | 35 | 20 | 15 |
 |---|---|---|---|---|---|
@@ -18,7 +18,7 @@ All 10 success rates of the paper's Table 1 match exactly (SR@1m %, Colab Tesla 
 
 ## How to run
 
-Open `E2_UnLoc_Gibson_Colab.ipynb` in Colab, choose a **T4 GPU**, then **Run all**. It reads `gibson_t.zip` and `desdf.zip` from `MyDrive/Thesis/` and writes results to `MyDrive/Thesis/E2/results/unloc_v1/`. About 3.5 hours; if Colab disconnects, Run all again and finished runs are skipped.
+Open `E2_UnLoc_Gibson_Colab.ipynb` in Colab, choose a GPU **T4 GPU** or **A100**, then **Run all**. It reads `gibson_t.zip` and `desdf.zip` from `MyDrive/Thesis/` and writes results to `MyDrive/Thesis/E2/results/unloc_v1/`. About 3.5 hours; if Colab disconnects, Run all again and finished runs are skipped.
 
 - Code: `matthias-wueest/UnLoc` @ `3c7a301`, Depth Anything V2 @ `a561b84`.
 - Checkpoints: `unloc_gibson_vitl.ckpt` (authors' Google Drive, 15 MB) and Depth Anything V2 Metric-Hypersim Large (Hugging Face, 1.3 GB). Not in this repository.
