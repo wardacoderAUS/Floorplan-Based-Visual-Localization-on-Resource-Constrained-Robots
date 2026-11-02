@@ -2,7 +2,7 @@
 
 A visual localization pipeline that finds a camera's position by matching its images against a building floorplan, characterized and deployed on four embedded platforms: ESP32-P4, GAP9, Raspberry Pi 5 and Jetson Orin Nano.
 
-The Master’s thesis research team consists of **Shams Alani** and **Warda Ul Hasan**, under the supervision of **Dr. Mohamed Hassan**. Each student’s experiments, research activities, and milestones are organized in their respective folders.
+Each student’s experiments, research activities, and milestones are organized in their respective folders.
 
 ## Structure
 
@@ -11,7 +11,7 @@ env/                   pinned software versions
 shams/
   timing-harness/      timing harness
 warda/
-  baseline/            F3Loc reproduction 
-  second-baseline/     second localization method
-  shrinking/           smaller, quantized model for the microcontrollers
+  baseline/            F3Loc reproduction (done)
+  second-baseline/     second localization method (done)
+  shrinking/           smaller, quantized model for the microcontrollers (in progress)
 ```
