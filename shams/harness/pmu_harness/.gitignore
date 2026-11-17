@@ -1,0 +1,7 @@
+demo
+*.o
+esp/build/
+esp/sdkconfig
+esp/sdkconfig.old
+gap/build/
+results/
