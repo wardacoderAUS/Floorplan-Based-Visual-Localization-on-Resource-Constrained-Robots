@@ -1,0 +1,187 @@
+8
+counters: none (only waiting vs running can be shown)
+prices:   peak 0.00 instructions/ns
+memory:   | T0 RAM 4KB=1.9ns RAM 16KB=1.9ns RAM 64KB=1.9ns | T1 RAM 256KB=6.3ns RAM 1024KB=6.8ns RAM 4096KB=8.0ns | T2 RAM 16384KB=26.5ns | T3 RAM 65536KB=94.1ns
+
+=== program: ./workload   exit code 0   run time 171.1 ms   threads 8 ===
+
+-- what the code did (- = not counted on this board) --
+thread          Minstr   IPC |   loads  stores     int      fp    simd  branch | mispred |   L1/kI   L2/kI   L3/kI
+workload          0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+compute           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+rand-mem          0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+seq-mem           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+sleeper           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared1           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared2           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared3           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+----
+ALL               0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+(ops and branches: % of instructions; mispred: % of branches; misses per 1000 instructions)
+
+-- where the time went: CATEGORIES (same on every board; share of wall time) --
+thread          time ms |  COMPUTE   MEMORY  RUNNING   KERNEL  WAITING | label
+workload         170.92 |     0.0%     0.0%     3.8%     0.0%    96.2% | WAITING / blocked
+compute           56.09 |     0.0%     0.0%    99.9%     0.0%     0.1% | RUNNING
+rand-mem          34.46 |     0.0%     0.0%    97.4%     0.0%     2.6% | RUNNING
+seq-mem           58.23 |     0.0%     0.0%    98.4%     0.0%     1.6% | RUNNING
+sleeper          121.16 |     0.0%     0.0%     0.3%     0.0%    99.7% | WAITING / blocked
+shared1          156.78 |     0.0%     0.0%    33.4%     0.0%    66.6% | WAITING / preempted
+shared2          156.65 |     0.0%     0.0%    33.3%     0.0%    66.7% | WAITING / preempted
+shared3          155.57 |     0.0%     0.0%    33.4%     0.0%    66.6% | WAITING / preempted
+----
+ALL              909.85 |     0.0%     0.0%    34.1%     0.0%    65.9% | WAITING / preempted
+
+-- sub-categories (the detail this board can give) --
+thread       |   issue   arith |  L1miss  L2miss  L3miss | preempt blocked | explained overlap
+workload     |       -       - |       -       -       - |    2.5%   93.7% |         -       -
+compute      |       -       - |       -       -       - |    0.0%    0.1% |         -       -
+rand-mem     |       -       - |       -       -       - |    0.0%    2.6% |         -       -
+seq-mem      |       -       - |       -       -       - |    0.0%    1.6% |         -       -
+sleeper      |       -       - |       -       -       - |    0.0%   99.7% |         -       -
+shared1      |       -       - |       -       -       - |   65.1%    1.5% |         -       -
+shared2      |       -       - |       -       -       - |   66.0%    0.7% |         -       -
+shared3      |       -       - |       -       -       - |   66.5%    0.0% |         -       -
+----
+ALL          |       -       - |       -       -       - |   34.4%   31.5% |         -       -
+(explained: share of running cycles the counted work accounts for; overlap: misses in flight)
+
+-- delays (ms): memory total = every miss's full latency; exposed = the core stopped;
+   hidden = covered by other work (pipelining, misses in parallel) --
+thread       |  mem total    exposed     hidden  hidden% |  preempted    blocked | forced-sw volunt-sw
+workload     |      0.000      0.000      0.000       0% |      4.191    160.157 |         5        18
+compute      |      0.000      0.000      0.000       0% |      0.000      0.033 |         0         2
+rand-mem     |      0.000      0.000      0.000       0% |      0.000      0.895 |         0         2
+seq-mem      |      0.000      0.000      0.000       0% |      0.000      0.944 |         0         2
+sleeper      |      0.000      0.000      0.000       0% |      0.015    120.832 |         0        52
+shared1      |      0.000      0.000      0.000       0% |    102.044      2.296 |        18         2
+shared2      |      0.000      0.000      0.000       0% |    103.334      1.163 |        18         2
+shared3      |      0.000      0.000      0.000       0% |    103.502      0.051 |        19         2
+----
+ALL          |      0.000      0.000      0.000       0% |    313.086    286.371 |        60        82
+(ALL = the threads added up: a program can use several cores at once, so its time can
+ exceed the run time; - = not counted, or the kernel does not split waiting)
+counters: none (only waiting vs running can be shown)
+prices:   peak 0.00 instructions/ns
+memory:   | T0 RAM 4KB=1.9ns RAM 16KB=1.9ns RAM 64KB=1.9ns | T1 RAM 256KB=6.1ns RAM 1024KB=6.2ns RAM 4096KB=7.1ns | T2 RAM 16384KB=25.6ns | T3 RAM 65536KB=94.9ns
+
+=== program: ./workload   exit code 0   run time 162.1 ms   threads 8 ===
+
+-- what the code did (- = not counted on this board) --
+thread          Minstr   IPC |   loads  stores     int      fp    simd  branch | mispred |   L1/kI   L2/kI   L3/kI
+workload          0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+compute           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+rand-mem          0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+seq-mem           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+sleeper           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared1           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared2           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared3           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+----
+ALL               0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+(ops and branches: % of instructions; mispred: % of branches; misses per 1000 instructions)
+
+-- where the time went: CATEGORIES (same on every board; share of wall time) --
+thread          time ms |  COMPUTE   MEMORY  RUNNING   KERNEL  WAITING | label
+workload         162.00 |     0.0%     0.0%     3.3%     0.0%    96.7% | WAITING / blocked
+compute           56.48 |     0.0%     0.0%    98.0%     0.0%     2.0% | RUNNING
+rand-mem          33.19 |     0.0%     0.0%    99.6%     0.0%     0.4% | RUNNING
+seq-mem           57.13 |     0.0%     0.0%    99.7%     0.0%     0.3% | RUNNING
+sleeper          119.99 |     0.0%     0.0%     0.3%     0.0%    99.7% | WAITING / blocked
+shared1          148.47 |     0.0%     0.0%    35.2%     0.0%    64.8% | WAITING / preempted
+shared2          156.56 |     0.0%     0.0%    33.3%     0.0%    66.7% | WAITING / preempted
+shared3          152.95 |     0.0%     0.0%    34.0%     0.0%    66.0% | WAITING / preempted
+----
+ALL              886.78 |     0.0%     0.0%    34.7%     0.0%    65.3% | WAITING / preempted
+
+-- sub-categories (the detail this board can give) --
+thread       |   issue   arith |  L1miss  L2miss  L3miss | preempt blocked | explained overlap
+workload     |       -       - |       -       -       - |    6.4%   90.3% |         -       -
+compute      |       -       - |       -       -       - |    0.0%    2.0% |         -       -
+rand-mem     |       -       - |       -       -       - |    0.0%    0.4% |         -       -
+seq-mem      |       -       - |       -       -       - |    0.0%    0.3% |         -       -
+sleeper      |       -       - |       -       -       - |    0.0%   99.7% |         -       -
+shared1      |       -       - |       -       -       - |   64.8%    0.1% |         -       -
+shared2      |       -       - |       -       -       - |   64.9%    1.9% |         -       -
+shared3      |       -       - |       -       -       - |   65.9%    0.1% |         -       -
+----
+ALL          |       -       - |       -       -       - |   34.8%   30.5% |         -       -
+(explained: share of running cycles the counted work accounts for; overlap: misses in flight)
+
+-- delays (ms): memory total = every miss's full latency; exposed = the core stopped;
+   hidden = covered by other work (pipelining, misses in parallel) --
+thread       |  mem total    exposed     hidden  hidden% |  preempted    blocked | forced-sw volunt-sw
+workload     |      0.000      0.000      0.000       0% |     10.409    146.223 |         3        18
+compute      |      0.000      0.000      0.000       0% |      0.000      1.105 |         0         2
+rand-mem     |      0.000      0.000      0.000       0% |      0.000      0.141 |         0         2
+seq-mem      |      0.000      0.000      0.000       0% |      0.000      0.180 |         0         2
+sleeper      |      0.000      0.000      0.000       0% |      0.011    119.666 |         0        52
+shared1      |      0.000      0.000      0.000       0% |     96.156      0.076 |        20         2
+shared2      |      0.000      0.000      0.000       0% |    101.553      2.943 |        18         2
+shared3      |      0.000      0.000      0.000       0% |    100.840      0.077 |        18         2
+----
+ALL          |      0.000      0.000      0.000       0% |    308.969    270.410 |        59        82
+(ALL = the threads added up: a program can use several cores at once, so its time can
+ exceed the run time; - = not counted, or the kernel does not split waiting)
+counters: none (only waiting vs running can be shown)
+prices:   peak 0.00 instructions/ns
+memory:   | T0 RAM 4KB=1.9ns RAM 16KB=1.9ns RAM 64KB=1.9ns | T1 RAM 256KB=6.3ns RAM 1024KB=6.5ns RAM 4096KB=7.9ns | T2 RAM 16384KB=27.2ns | T3 RAM 65536KB=95.4ns
+
+=== program: ./workload   exit code 0   run time 162.4 ms   threads 8 ===
+
+-- what the code did (- = not counted on this board) --
+thread          Minstr   IPC |   loads  stores     int      fp    simd  branch | mispred |   L1/kI   L2/kI   L3/kI
+workload          0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+compute           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+rand-mem          0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+seq-mem           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+sleeper           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared1           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared2           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+shared3           0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+----
+ALL               0.00  0.00 |       -       -       -       -       -       - |       - |       -       -       -
+(ops and branches: % of instructions; mispred: % of branches; misses per 1000 instructions)
+
+-- where the time went: CATEGORIES (same on every board; share of wall time) --
+thread          time ms |  COMPUTE   MEMORY  RUNNING   KERNEL  WAITING | label
+workload         162.23 |     0.0%     0.0%     3.2%     0.0%    96.8% | WAITING / blocked
+compute           54.61 |     0.0%     0.0%    99.6%     0.0%     0.4% | RUNNING
+rand-mem          39.50 |     0.0%     0.0%    88.5%     0.0%    11.5% | RUNNING
+seq-mem           57.50 |     0.0%     0.0%    99.2%     0.0%     0.8% | RUNNING
+sleeper          120.31 |     0.0%     0.0%     0.3%     0.0%    99.7% | WAITING / blocked
+shared1          154.38 |     0.0%     0.0%    33.9%     0.0%    66.1% | WAITING / preempted
+shared2          155.79 |     0.0%     0.0%    33.5%     0.0%    66.5% | WAITING / preempted
+shared3          153.63 |     0.0%     0.0%    33.9%     0.0%    66.1% | WAITING / preempted
+----
+ALL              897.94 |     0.0%     0.0%    34.4%     0.0%    65.6% | WAITING / preempted
+
+-- sub-categories (the detail this board can give) --
+thread       |   issue   arith |  L1miss  L2miss  L3miss | preempt blocked | explained overlap
+workload     |       -       - |       -       -       - |    5.6%   91.2% |         -       -
+compute      |       -       - |       -       -       - |    0.0%    0.4% |         -       -
+rand-mem     |       -       - |       -       -       - |    0.0%   11.5% |         -       -
+seq-mem      |       -       - |       -       -       - |    0.0%    0.8% |         -       -
+sleeper      |       -       - |       -       -       - |    0.0%   99.7% |         -       -
+shared1      |       -       - |       -       -       - |   66.1%    0.0% |         -       -
+shared2      |       -       - |       -       -       - |   64.5%    2.1% |         -       -
+shared3      |       -       - |       -       -       - |   65.3%    0.8% |         -       -
+----
+ALL          |       -       - |       -       -       - |   34.7%   30.9% |         -       -
+(explained: share of running cycles the counted work accounts for; overlap: misses in flight)
+
+-- delays (ms): memory total = every miss's full latency; exposed = the core stopped;
+   hidden = covered by other work (pipelining, misses in parallel) --
+thread       |  mem total    exposed     hidden  hidden% |  preempted    blocked | forced-sw volunt-sw
+workload     |      0.000      0.000      0.000       0% |      9.086    147.894 |         4        19
+compute      |      0.000      0.000      0.000       0% |      0.000      0.216 |         0         2
+rand-mem     |      0.000      0.000      0.000       0% |      0.000      4.556 |         0         2
+seq-mem      |      0.000      0.000      0.000       0% |      0.000      0.468 |         0         2
+sleeper      |      0.000      0.000      0.000       0% |      0.003    119.928 |         0        52
+shared1      |      0.000      0.000      0.000       0% |    102.081      0.028 |        27         2
+shared2      |      0.000      0.000      0.000       0% |    100.442      3.226 |        18         2
+shared3      |      0.000      0.000      0.000       0% |    100.366      1.178 |        18         2
+----
+ALL          |      0.000      0.000      0.000       0% |    311.978    277.497 |        67        83
+(ALL = the threads added up: a program can use several cores at once, so its time can
+ exceed the run time; - = not counted, or the kernel does not split waiting)

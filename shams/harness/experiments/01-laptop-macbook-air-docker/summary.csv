@@ -1,0 +1,9 @@
+thread,lifetime_ms_mean,lifetime_ms_min,lifetime_ms_max,running_pct_mean,running_pct_min,running_pct_max,preempted_pct_mean,preempted_pct_min,preempted_pct_max,blocked_pct_mean,blocked_pct_min,blocked_pct_max,forced_switches_mean,forced_switches_min,forced_switches_max,voluntary_switches_mean,voluntary_switches_min,voluntary_switches_max,label_all_runs
+main,165.05,162.0,170.92,3.43,3.2,3.8,4.83,2.5,6.4,91.73,90.3,93.7,4,3,5,18.33,18,19,WAITING / blocked
+compute,55.73,54.61,56.48,99.17,98.0,99.9,0,0,0,0.83,0.1,2.0,0,0,0,2,2,2,RUNNING
+rand-mem,35.72,33.19,39.5,95.17,88.5,99.6,0,0,0,4.83,0.4,11.5,0,0,0,2,2,2,RUNNING
+seq-mem,57.62,57.13,58.23,99.1,98.4,99.7,0,0,0,0.9,0.3,1.6,0,0,0,2,2,2,RUNNING
+sleeper,120.49,119.99,121.16,0.3,0.3,0.3,0,0,0,99.7,99.7,99.7,0,0,0,52,52,52,WAITING / blocked
+shared1,153.21,148.47,156.78,34.17,33.4,35.2,65.33,64.8,66.1,0.53,0.0,1.5,21.67,18,27,2,2,2,WAITING / preempted
+shared2,156.33,155.79,156.65,33.37,33.3,33.5,65.13,64.5,66.0,1.57,0.7,2.1,18,18,18,2,2,2,WAITING / preempted
+shared3,154.05,152.95,155.57,33.77,33.4,34.0,65.9,65.3,66.5,0.3,0.0,0.8,18.33,18,19,2,2,2,WAITING / preempted

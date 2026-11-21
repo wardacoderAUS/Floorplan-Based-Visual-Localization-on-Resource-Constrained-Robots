@@ -5,3 +5,5 @@ esp/sdkconfig
 esp/sdkconfig.old
 gap/build/
 results/
+workload
+pmurun
