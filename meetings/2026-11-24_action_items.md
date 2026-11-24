@@ -10,9 +10,8 @@ Only thesis items. (Fall detection was also discussed, but it is not part of the
 2. **Shrinking: start with quantization.**
    - For each quantized model, check memory first, then computation.
    - Look into other ways to shrink afterwards.
-3. **Find out how the 2D floorplan is represented.** Is it stored as an image, or as some other kind of data?
-4. **Find out what the "output representation" is.** Dr. Hassan's term; I didn't fully understand the question in the meeting, so I need to look into it.
-5. **Explain what the localization uses as input.** Is it visual (camera images) or laser? Dr. Hassan mentioned that some methods use laser.
+3. **Find out what the camera images are matched against: the 2D floorplan.** The input is camera images (already answered in the meeting). The open question is the floorplan itself: is it an image, or some other kind of data? Dr. Hassan mentioned that some methods use laser.
+4. **Find out the output representation: in what form it is stored.**
 
 ## Shams
 
